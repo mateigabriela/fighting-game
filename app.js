@@ -9,16 +9,31 @@ c.fillRect(0, 0, canvas.width, canvas.height); //(X, Y, width ,height ) X,Y-pozi
 
 const gravity = 0.7; // cat de repede cad obiectele, creste treptat
 class Sprite {
-    constructor({position, velocity}) { //facand argumetele un obiect, ordinea nu mai este importanta
+    constructor({position, velocity, color='red'}) { //facand argumetele un obiect, ordinea nu mai este importanta
         this.position = position; //salvam pozitia fiecarui element vizibil din joc
         this.velocity = velocity;
+        this.width=50;
         this.height = 150;
         this.lastKey;
+        this.attackBox = {
+            position: this.position,
+            width: 100,
+            height: 50
+        };
+        this.color=color;
+        this.isAttacking;
+        
     }
 
     draw() {
-        c.fillStyle='red';
-        c.fillRect(this.position.x, this.position.y, 50, this.height); //punem pozitiile obiectului Sprite, folosind constructorul
+        c.fillStyle=this.color;
+        c.fillRect(this.position.x, this.position.y, this.width, this.height); //punem pozitiile obiectului Sprite, folosind constructorul
+        
+        //attackBox
+        if(this.isAttacking) { //facem vizibil attackBox ul doar atunci cand ataca
+            c.fillStyle='green';
+            c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height);
+        }
     }
 
     update() { //metoda pe care o vom apela atuci cand obiectele vor incepe sa se miste
@@ -32,6 +47,14 @@ class Sprite {
             this.velocity.y += gravity;
         }
     }
+
+    attack () {  //functia se apeleaza cand apasam tasta spatiu, chiar daca vom intra in aria enamy ului, nu va fi atacat, ci doar atunci cand suntem si in aria lui si apasam si tasta spatiu
+        this.isAttacking = true;
+        setTimeout(() => {
+            this.isAttacking=false
+        }, 100)
+    }
+
 }
 
 const player = new Sprite({
@@ -54,7 +77,8 @@ const enamy = new Sprite({
     velocity: {
         x:0,
         y:0
-    }
+    },
+    color: 'blue'
 });
 
 console.log(player);
@@ -100,6 +124,16 @@ function animate() {
     } else if (keys.ArrowRight.pressed && enamy.lastKey === 'ArrowRight'){ 
         enamy.velocity.x=5;
     }
+
+    //detectam daca obcitele au fost ,,atacate" 
+    if (player.attackBox.position.x + player.attackBox.width > enamy.position.x && 
+        player.attackBox.position.x <= enamy.position.x + enamy.width &&
+        player.attackBox.position.y + player.attackBox.height >= enamy.position.y && //atunci cand sarim deasupra obiectului sa nu fim in zona de ,,atac"
+        player.attackBox.position.y <= enamy.position.y + enamy.height &&
+        player.isAttacking) { //conditie pentru atac 
+            player.isAttacking=false;     
+            console.log('attack');
+    }
 };
 
 animate()
@@ -132,6 +166,10 @@ window.addEventListener('keydown',(event) => { //keydown se refera la momentul c
         break;
         case 'ArrowUp': 
             enamy.velocity.y = -20; //cand apasam tasta 'w' obeictul se misca in sus
+        break;
+
+        case ' ': //cand apasam tasta spatiu, playerul o sa atace
+            player.attack();
         break;
 
     }
