@@ -1,0 +1,13 @@
+.player-health {
+    background-color: yellow;
+    height: 30px;
+    width: 100px;
+}
+
+.main-container {
+    position: relative;
+}
+
+.health-container{
+    position: absolute;
+}
