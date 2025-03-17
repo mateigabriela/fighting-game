@@ -9,14 +9,18 @@ c.fillRect(0, 0, canvas.width, canvas.height); //(X, Y, width ,height ) X,Y-pozi
 
 const gravity = 0.7; // cat de repede cad obiectele, creste treptat
 class Sprite {
-    constructor({position, velocity, color='red'}) { //facand argumetele un obiect, ordinea nu mai este importanta
+    constructor({position, velocity, color='red', offset}) { //facand argumetele un obiect, ordinea nu mai este importanta
         this.position = position; //salvam pozitia fiecarui element vizibil din joc
         this.velocity = velocity;
         this.width=50;
         this.height = 150;
         this.lastKey;
         this.attackBox = {
-            position: this.position,
+            position: {
+                x: this.position.x,
+                y: this.position.y
+            },
+            offset, //=offset: offset
             width: 100,
             height: 50
         };
@@ -30,14 +34,17 @@ class Sprite {
         c.fillRect(this.position.x, this.position.y, this.width, this.height); //punem pozitiile obiectului Sprite, folosind constructorul
         
         //attackBox
-        if(this.isAttacking) { //facem vizibil attackBox ul doar atunci cand ataca
+         if(this.isAttacking) { //facem vizibil attackBox ul doar atunci cand ataca
             c.fillStyle='green';
             c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height);
-        }
+         }
     }
 
     update() { //metoda pe care o vom apela atuci cand obiectele vor incepe sa se miste
         this.draw();
+        this.attackBox.position.x = this.position.x + this.attackBox.offset.x;
+        this.attackBox.position.y = this.position.y;
+
         this.position.x += this.velocity.x; // cand apasa pe anumite butoane de la tastatura si vrem ca obictele sa se miste, crestem velocity si il adaum aici la pozitie pentru a-l misca
         this.position.y += this.velocity.y;
         if(this.position.y + this.height + this.velocity.y >= canvas.height) // distanta de la baza dreptunghiului pana la sfarsitul zonei de canvas
@@ -65,6 +72,10 @@ const player = new Sprite({
    velocity: {
         x: 0,
         y: 10, //default, nu va fi in miscare
+   },
+   offset: {
+    x: 0,
+    y: 0
    }
 });
 
@@ -78,7 +89,11 @@ const enamy = new Sprite({
         x:0,
         y:0
     },
-    color: 'blue'
+    color: 'blue',
+    offset: {
+        x: -50,
+        y: 0
+       }
 });
 
 console.log(player);
@@ -100,6 +115,13 @@ const keys = {
         pressed: false
     }
 };
+
+function rectangularCollision({rectangle1, rectangle2}) {
+    return (rectangle1.attackBox.position.x + rectangle1.attackBox.width > rectangle2.position.x && 
+        rectangle1.attackBox.position.x <= rectangle2.position.x + rectangle2.width &&
+        rectangle1.attackBox.position.y + rectangle1.attackBox.height >= rectangle2.position.y && //atunci cand sarim deasupra obiectului sa nu fim in zona de ,,atac"
+        rectangle1.attackBox.position.y <= rectangle2.position.y + rectangle2.height);
+}
 
 function animate() {
     window.requestAnimationFrame(animate);
@@ -126,13 +148,22 @@ function animate() {
     }
 
     //detectam daca obcitele au fost ,,atacate" 
-    if (player.attackBox.position.x + player.attackBox.width > enamy.position.x && 
-        player.attackBox.position.x <= enamy.position.x + enamy.width &&
-        player.attackBox.position.y + player.attackBox.height >= enamy.position.y && //atunci cand sarim deasupra obiectului sa nu fim in zona de ,,atac"
-        player.attackBox.position.y <= enamy.position.y + enamy.height &&
+    if ( rectangularCollision({
+        rectangle1: player,
+        rectangle2: enamy
+    }) &&
         player.isAttacking) { //conditie pentru atac 
             player.isAttacking=false;     
-            console.log('attack');
+            console.log('attack player');
+    }
+
+    if ( rectangularCollision({
+        rectangle1: enamy,
+        rectangle2: player
+    }) &&
+        enamy.isAttacking) { //conditie pentru atac 
+            enamy.isAttacking=false;     
+            console.log('attack enamy');
     }
 };
 
@@ -171,9 +202,12 @@ window.addEventListener('keydown',(event) => { //keydown se refera la momentul c
         case ' ': //cand apasam tasta spatiu, playerul o sa atace
             player.attack();
         break;
+        case 'ArrowDown':
+            enamy.attack();
+        break;
 
     }
-    console.log(event.key); //ne afiseaza pe ce tasta apasam
+    // console.log(event.key); //ne afiseaza pe ce tasta apasam
 })
 
 //oprim din miscare obiectul atunci cand eliberam tasta
@@ -203,5 +237,5 @@ window.addEventListener('keyup',(event) =>{  //keyup se refera la momentul cand 
         // case 'ArrowUp':
         //     keys.ArrowUp.pressed=false; //cand eliberam tasta 'a' obiectul se opreste din miscare
         // break;
-    console.log(event.key); //ne afiseaza pe ce tasta apasam
+    // console.log(event.key); //ne afiseaza pe ce tasta apasam
 }})
